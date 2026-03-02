@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Download, File, FileText, Image, Film, Music, Brain, Layers, Search, ArrowDownAZ, Upload, X, CalendarDays, HardDrive } from "lucide-react";
+import { Download, File, FileText, Image, Film, Music, Brain, Layers, Search, ArrowDownAZ, Upload, X, CalendarDays, HardDrive, Trash } from "lucide-react";
 import { documentsApi, casesApi, DocumentItem, CaseItem } from "@/lib/api";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentViewer } from "@/components/DocumentViewer";
@@ -70,6 +70,17 @@ export default function DocumentStoragePage() {
     const handleDownload = (docId: string) => {
         const url = documentsApi.downloadUrl(docId);
         window.open(url, "_blank");
+    };
+
+    const handleDelete = async (docId: string, docName: string) => {
+        if (!window.confirm(`Are you sure you want to delete "${docName}"?`)) return;
+        try {
+            await documentsApi.delete(docId);
+            loadData();
+        } catch (err: any) {
+            console.error("Failed to delete document", err);
+            alert(`Failed to delete document: ${err.message || "Unknown error"}`);
+        }
     };
 
     const handleUploadComplete = () => {
@@ -228,13 +239,22 @@ export default function DocumentStoragePage() {
                                         <div className="w-10 h-10 rounded-lg bg-blue-50/50 border border-blue-100/50 flex items-center justify-center text-blue-700">
                                             {getIconForCategory(catForIcon)}
                                         </div>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDownload(doc.id); }}
-                                            className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-blue-50 flex items-center justify-center text-zinc-400 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"
-                                            title="Download"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDownload(doc.id); }}
+                                                className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-blue-50 flex items-center justify-center text-zinc-400 hover:text-blue-600 transition-colors"
+                                                title="Download"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, doc.original_filename); }}
+                                                className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-red-50 flex items-center justify-center text-zinc-400 hover:text-red-600 transition-colors"
+                                                title="Delete"
+                                            >
+                                                <Trash className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                     <div>
                                         <h4 className="text-[13.5px] font-bold text-zinc-900 truncate mb-2 group-hover:text-blue-700 transition-colors" title={doc.original_filename}>
