@@ -4,6 +4,8 @@ import { useState } from "react";
 import { FileSignature, Upload, Loader2, Play } from "lucide-react";
 import { ClauseCard } from "@/components/ClauseCard";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 interface Clause {
     clause_title: string;
     original_text: string;
@@ -16,6 +18,7 @@ export default function ContractsPage() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [clauses, setClauses] = useState<Clause[]>([]);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     // For handling per-clause actions
     const [rewritingIndex, setRewritingIndex] = useState<number | null>(null);
@@ -26,22 +29,30 @@ export default function ContractsPage() {
         if (!contractText.trim()) return;
 
         setIsAnalyzing(true);
+        setErrorMsg(null);
         setClauses([]);
         setRewrittenTexts({});
 
         try {
-            const res = await fetch("/api/contracts/analyze", {
+            const res = await fetch(`${API_BASE}/api/contracts/analyze`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ document_text: contractText })
             });
 
-            if (!res.ok) throw new Error("Failed to analyze contract");
-            const data = await res.json();
+            const textData = await res.text();
+            let data;
+            try {
+                data = textData ? JSON.parse(textData) : {};
+            } catch (e) {
+                console.error("Non-JSON response:", textData);
+                throw new Error(`Server returned non-JSON response (Status: ${res.status})`);
+            }
+            if (!res.ok) throw new Error(data.detail || `HTTP Error ${res.status}`);
             setClauses(data.clauses || []);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Analysis Error:", error);
-            alert("An error occurred while analyzing the contract.");
+            setErrorMsg(error.message || "An error occurred while analyzing the contract.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -61,17 +72,24 @@ export default function ContractsPage() {
         formData.append("file", file);
 
         try {
-            const res = await fetch("/api/contracts/upload", {
+            const res = await fetch(`${API_BASE}/api/contracts/upload`, {
                 method: "POST",
                 body: formData
             });
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || "Failed to scan PDF");
+            const textData = await res.text();
+            let data;
+            try {
+                data = textData ? JSON.parse(textData) : {};
+            } catch (e) {
+                console.error("Non-JSON response:", textData);
+                throw new Error(`Server returned non-JSON response (Status: ${res.status})`);
             }
 
-            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || `HTTP Error ${res.status} on upload`);
+            }
+
             setContractText(data.text);
         } catch (error: any) {
             console.error("Upload Error:", error);
@@ -86,22 +104,29 @@ export default function ContractsPage() {
     const handleRewrite = async (index: number, clauseText: string, stance: string) => {
         setRewritingIndex(index);
         try {
-            const res = await fetch("/api/contracts/rewrite", {
+            const res = await fetch(`${API_BASE}/api/contracts/rewrite`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ clause_text: clauseText, stance })
             });
 
-            if (!res.ok) throw new Error("Failed to rewrite clause");
-            const data = await res.json();
+            const textData = await res.text();
+            let data;
+            try {
+                data = textData ? JSON.parse(textData) : {};
+            } catch (e) {
+                throw new Error(`Server returned non-JSON response (Status: ${res.status})`);
+            }
+
+            if (!res.ok) throw new Error(data.detail || `Failed to rewrite clause (HTTP ${res.status})`);
 
             setRewrittenTexts(prev => ({
                 ...prev,
                 [index]: { text: data.alternative_text, stance: data.stance_used }
             }));
-        } catch (error) {
+        } catch (error: any) {
             console.error("Rewrite Error:", error);
-            alert("Failed to rewrite the clause.");
+            alert(error.message || "Failed to rewrite the clause.");
         } finally {
             setRewritingIndex(null);
         }
@@ -110,14 +135,21 @@ export default function ContractsPage() {
     const handleFindPrecedents = async (index: number, clauseText: string) => {
         setFindingPrecedentsIndex(index);
         try {
-            const res = await fetch("/api/contracts/precedents", {
+            const res = await fetch(`${API_BASE}/api/contracts/precedents`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ clause_text: clauseText })
             });
 
-            if (!res.ok) throw new Error("Failed to find precedents");
-            const data = await res.json();
+            const textData = await res.text();
+            let data;
+            try {
+                data = textData ? JSON.parse(textData) : {};
+            } catch (e) {
+                throw new Error(`Server returned non-JSON response (Status: ${res.status})`);
+            }
+
+            if (!res.ok) throw new Error(data.detail || `Failed to find precedents (HTTP ${res.status})`);
 
             // For now, since we don't have a modals setup, we will just alert or log it.
             // Ideally this would open a side drawer or redirect to Research with the prompt.
@@ -125,9 +157,9 @@ export default function ContractsPage() {
             const prompt = `Find precedents for this contract clause: ${clauseText}`;
             window.open(`/research?prompt=${encodeURIComponent(prompt)}`, "_blank");
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Precedents Error:", error);
-            alert("Failed to find precedents.");
+            alert(error.message || "Failed to find precedents.");
         } finally {
             setFindingPrecedentsIndex(null);
         }
@@ -200,6 +232,12 @@ export default function ContractsPage() {
                     </div>
 
                     <div className="flex-1 p-4 md:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200">
+                        {errorMsg && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">
+                                <span className="font-bold block mb-1">Analysis Interrupted</span>
+                                {errorMsg}
+                            </div>
+                        )}
                         {clauses.length === 0 && !isAnalyzing ? (
                             <div className="h-full flex flex-col items-center justify-center text-center px-6">
                                 <div className="w-16 h-16 bg-white border border-zinc-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">

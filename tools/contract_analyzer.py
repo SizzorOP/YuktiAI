@@ -76,7 +76,7 @@ def extract_and_score_clauses(contract_text: str) -> dict:
 
     system_prompt = """
     You are an expert Corporate Lawyer and Contract Analyst.
-    Your task is to analyze the provided contract text, extract distinct material clauses, and assign each an ABSOLUTE risk score from 1 to 10.
+    Your task is to analyze the provided contract text, extract the top 10-15 most material and critical clauses, and assign each an ABSOLUTE risk score from 1 to 10.
     
     Risk scoring guidelines:
     - 1-3: Low risk, standard boilerplate, balanced terms.
@@ -84,13 +84,14 @@ def extract_and_score_clauses(contract_text: str) -> dict:
     - 8-10: High risk, unlimited liability, highly punitive terms, non-standard aggressive clauses.
     
     For each extracted clause, provide its exact original text, a descriptive title, the risk score, and a clear reasoning for the assigned score.
-    Do not hallucinate clauses that are not present in the text.
+    Do not hallucinate clauses that are not present in the text. Only extract the most impactful clauses to avoid excessively long responses.
     """
 
     try:
         response = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             temperature=0.0,
+            max_completion_tokens=10000,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Contract Text to Analyze:\n\n{contract_text}"}
@@ -101,6 +102,8 @@ def extract_and_score_clauses(contract_text: str) -> dict:
         raw_output = response.choices[0].message.content
         return json.loads(raw_output)
         
+    except json.decoder.JSONDecodeError as e:
+        raise ContractAnalyzerError(f"LLM produced invalid JSON (possibly truncated due to contract length): {str(e)}")
     except Exception as e:
         raise ContractAnalyzerError(f"LLM processing failed: {str(e)}")
 

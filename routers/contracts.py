@@ -87,7 +87,7 @@ def analyze_contract(req: ContractAnalyzeRequest, db: Session = Depends(get_db))
         if 'analysis_record' in locals():
             analysis_record.status = "failed"
             db.commit()
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analysis Error: {str(e)}")
 
 
 @router.post("/rewrite")
