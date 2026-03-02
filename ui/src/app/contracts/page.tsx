@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FileSignature, Upload, Loader2, Play } from "lucide-react";
 import { ClauseCard } from "@/components/ClauseCard";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 
 interface Clause {
     clause_title: string;
@@ -34,7 +34,7 @@ export default function ContractsPage() {
         setRewrittenTexts({});
 
         try {
-            const res = await fetch(`${API_BASE}/api/contracts/analyze`, {
+            const res = await fetch(`/api/contracts/analyze`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ document_text: contractText })
@@ -72,7 +72,7 @@ export default function ContractsPage() {
         formData.append("file", file);
 
         try {
-            const res = await fetch(`${API_BASE}/api/contracts/upload`, {
+            const res = await fetch(`/api/contracts/upload`, {
                 method: "POST",
                 body: formData
             });
@@ -104,7 +104,7 @@ export default function ContractsPage() {
     const handleRewrite = async (index: number, clauseText: string, stance: string) => {
         setRewritingIndex(index);
         try {
-            const res = await fetch(`${API_BASE}/api/contracts/rewrite`, {
+            const res = await fetch(`/api/contracts/rewrite`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ clause_text: clauseText, stance })
@@ -135,7 +135,7 @@ export default function ContractsPage() {
     const handleFindPrecedents = async (index: number, clauseText: string) => {
         setFindingPrecedentsIndex(index);
         try {
-            const res = await fetch(`${API_BASE}/api/contracts/precedents`, {
+            const res = await fetch(`/api/contracts/precedents`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ clause_text: clauseText })
