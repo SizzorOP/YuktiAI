@@ -1,6 +1,6 @@
 # YuktiAI (Lawbot) — Project Memory
 
-> Last updated: 2026-03-02 (Session 5 — Auth, Mobile & Dashboard Refinement)  
+> Last updated: 2026-03-03 (Session 6 — Deployment, API Proxies & Document Management)  
 > Repository: https://github.com/SizzorOP/YuktiAI
 
 ---
@@ -125,6 +125,21 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 - **Root Cause**: Google News RSS encodes HTML summaries which simple regex was missing.
 - **Fix**: Updated `stripHtml` in API route to decode entities `&lt;` → `<` before stripping tags.
 
+### Bug 12: OpenAI JSON Truncation Error ("An error occurred while analyzing the contract")
+- **Symptom**: Long contract analyses failed with `json.decoder.JSONDecodeError` because the JSON string ended abruptly.
+- **Root Cause**: Missing `max_completion_tokens` caused OpenAI to hit its default relatively low limit, cutting off the structured JSON output mid-response.
+- **Fix**: Added `max_completion_tokens=10000` to the OpenAI API calls in `contract_analyzer.py` and implemented specific JSON decoding error handlers.
+
+### Bug 13: Vercel "Failed to Fetch" API Errors
+- **Symptom**: API calls (like contract analysis) worked locally but failed with network errors when deployed to Vercel.
+- **Root Cause**: Frontend was attempting to call `http://localhost:8000` directly from the user's browser, which doesn't exist on their local machine.
+- **Fix**: Implemented Next.js API Route Proxies (e.g., `ui/src/app/api/contracts/analyze/route.ts`). The frontend now makes same-origin calls to Next.js, and the Next.js server securely forwards the request to `NEXT_PUBLIC_API_URL` (the Render backend).
+
+### Bug 14: Render Database Connection Error (Plain Text 500)
+- **Symptom**: Render backend returned a plain text `500 Internal Server Error` instead of a JSON response.
+- **Root Cause**: First, `DATABASE_URL` was incorrectly formatted for Supabase's IPv4 pooler (`FATAL: Tenant or user not found`). Second, the backend exception handler tried to do `db.commit()` to save the error state, which triggered *another* database connection error (double-fault), overriding FastAPI's JSON response with a raw Starlette plain-text 500.
+- **Fix**: Wrapped the exception handler's `db.commit()` in a `try-except` block to prevent double-faults. Added a global `app.exception_handler(Exception)` to `main.py` temporarily to expose the raw traceback. Finally, corrected the `DATABASE_URL` on Render to use `aws-0-ap-south-1.pooler.supabase.com:6543` and the correct username `postgres.ebamudkznnzzdiqsdjvh`.
+
 ---
 
 ## 5. Design Decisions
@@ -145,9 +160,11 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 
 8. **Cascading Case Deletion**: Deleting a case automatically removes all associated documents (both DB records and files on disk) and calendar events.
 
-9. **Antigravity-Style UI**: Clean minimalist design with mixed typography (Playfair Display serif for headers + Geist sans for UI elements), pure white backgrounds, ultra-light borders, and blue-50 active states.
+9. **Next.js API Proxies**: All complex requests to the backend (especially file uploads and long LLM tasks) go through Next.js API proxy routes (`ui/src/app/api/...`) rather than direct origin-to-Render calls, circumventing CORS issues and masking the backend URL.
 
-10. **Early Env Loading**: `main.py` performs an eager `load_dotenv` before any internal imports to ensure all tool configurations (OpenAI, Kanoon) are available globally during process spin-up.
+10. **Antigravity-Style UI**: Clean minimalist design with mixed typography (Playfair Display serif for headers + Geist sans for UI elements), pure white backgrounds, ultra-light borders, and blue-50 active states.
+
+11. **Early Env Loading**: `main.py` performs an eager `load_dotenv` before any internal imports to ensure all tool configurations (OpenAI, Kanoon) are available globally during process spin-up.
 
 11. **Browser Persistence**: `/research` utilizes `localStorage` to preserve message history across page navigations, providing a seamless "tab-switchable" experience.
 
@@ -222,6 +239,7 @@ npx next dev
 ## 9. Known Limitations / Future Work
 
 - ~~**No file upload**: Document processor only works with pasted text, not PDF uploads~~ ✅ **RESOLVED** — Document upload via drag-and-drop with file validation
+- ~~**No document deletion**: Once uploaded, documents couldn't be removed~~ ✅ **RESOLVED** — Added Trash icon and API logic to delete documents individually from global and case views.
 - ~~**No state management**: No database, no case tracking~~ ✅ **RESOLVED** — SQLite + SQLAlchemy, full CRUD for cases/docs/events
 - ~~**No conversation memory**: Each query is independent; no multi-turn chat context~~ ✅ **RESOLVED** — Tab-persistent memory implemented for Research module
 - ~~**No authentication**: API is open, no user sessions~~ ✅ **RESOLVED** — Supabase Auth integrated with profile management
