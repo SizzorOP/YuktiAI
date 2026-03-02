@@ -13,7 +13,18 @@ export async function POST(request: NextRequest) {
             signal: AbortSignal.timeout(120000), // 2 min timeout for large contracts
         });
 
-        const data = await res.json().catch(() => ({ detail: "Backend returned non-JSON response" }));
+        const text = await res.text();
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            console.error("[Proxy] Non-JSON response from backend:", text.slice(0, 500));
+            return NextResponse.json(
+                { detail: `Backend error: ${text.slice(0, 200)}` },
+                { status: res.ok ? 502 : res.status }
+            );
+        }
 
         if (!res.ok) {
             return NextResponse.json(
@@ -23,10 +34,11 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(data);
-    } catch (error: any) {
-        console.error("[Proxy] /api/contracts/analyze error:", error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error("[Proxy] /api/contracts/analyze error:", message);
         return NextResponse.json(
-            { detail: error.message || "Failed to reach the analysis backend." },
+            { detail: `Failed to reach analysis backend: ${message}` },
             { status: 502 }
         );
     }
