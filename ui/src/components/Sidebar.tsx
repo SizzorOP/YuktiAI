@@ -22,6 +22,7 @@ import {
     LifeBuoy,
     LogOut,
     ChevronUp,
+    FileSignature,
 } from "lucide-react";
 
 const navigation = [
@@ -32,6 +33,7 @@ const navigation = [
     { name: "Legal Library", href: "/library", icon: BookOpen },
     { name: "Document Storage", href: "/documents", icon: FileText },
     { name: "Drafting", href: "/drafting", icon: PenTool },
+    { name: "Contract Analysis", href: "/contracts", icon: FileSignature },
     { name: "Translate", href: "/translation", icon: Languages },
     { name: "Meeting Assistant", href: "/meeting", icon: Headphones },
     { name: "Calendar", href: "/calendar", icon: CalendarDays },

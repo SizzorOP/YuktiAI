@@ -84,3 +84,21 @@ class CalendarEvent(Base):
 
     def __repr__(self):
         return f"<CalendarEvent(id={self.id}, title={self.title}, event_date={self.event_date})>"
+
+class ContractAnalysis(Base):
+    __tablename__ = "contract_analyses"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id", ondelete="SET NULL"), nullable=True) # Optional link to a case
+    title = Column(String(255), nullable=True)
+    original_text = Column(Text, nullable=False)
+    status = Column(String(50), default="processing") # processing | completed | failed
+    clauses = Column(Text, nullable=True) # JSON serialized list of clauses
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    # Relationships
+    case = relationship("Case")
+
+    def __repr__(self):
+        return f"<ContractAnalysis(id={self.id}, status={self.status})>"
