@@ -27,14 +27,14 @@ import {
 const navigation = [
     { name: "Notifications", href: "#", icon: Bell },
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Case Management", href: "/cases", icon: Briefcase },
     { name: "Research", href: "/research", icon: Search },
-    { name: "Drafting", href: "/drafting", icon: PenTool },
+    { name: "Case Management", href: "/cases", icon: Briefcase },
+    { name: "Legal Library", href: "/library", icon: BookOpen },
     { name: "Document Storage", href: "/documents", icon: FileText },
+    { name: "Drafting", href: "/drafting", icon: PenTool },
     { name: "Translate", href: "/translation", icon: Languages },
     { name: "Meeting Assistant", href: "/meeting", icon: Headphones },
     { name: "Calendar", href: "/calendar", icon: CalendarDays },
-    { name: "Legal Library", href: "/library", icon: BookOpen },
 ];
 
 export interface SidebarProps {

@@ -17,6 +17,8 @@ import {
     RefreshCw,
     Clock,
     Loader2,
+    PanelRightClose,
+    PanelRightOpen,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -46,6 +48,7 @@ export default function DashboardPage() {
     const { profile } = useAuth();
     const displayName = profile?.full_name || "User";
 
+    const [isQuickPromptsOpen, setIsQuickPromptsOpen] = useState(true);
     const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
     const [newsLoading, setNewsLoading] = useState(true);
     const [newsSource, setNewsSource] = useState("");
@@ -108,38 +111,10 @@ export default function DashboardPage() {
                         </h1>
                         <p className="text-[13px] text-zinc-500 font-medium">Last worked on</p>
                     </div>
-                    <button className="flex items-center gap-2 bg-[#2d2d2d] hover:bg-black text-white px-4 py-2.5 rounded-lg text-[13px] font-medium transition-colors shadow-sm">
-                        <Download className="w-4 h-4" />
-                        Install App
-                    </button>
                 </div>
 
                 {/* Main Content Areas */}
                 <div className="p-4 md:p-8 w-full max-w-5xl mx-auto space-y-6">
-
-                    {/* Onboarding Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] relative">
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="font-serif font-bold text-[16px] text-zinc-900">How to use YuktiAI</h3>
-                                <button className="text-[13px] font-medium text-zinc-900 hover:text-blue-600">Play video</button>
-                            </div>
-                            <p className="text-[13px] text-zinc-500 leading-relaxed">Watch this 3min video on how to use YuktiAI and how it can help you better your workflow</p>
-                        </div>
-                        <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="font-serif font-bold text-[16px] text-zinc-900">Take guided tour</h3>
-                                <button className="text-zinc-400 hover:text-zinc-900 transition-colors -mt-1">
-                                    <span className="text-xl">›</span>
-                                </button>
-                            </div>
-                            <p className="text-[13px] text-zinc-500 leading-relaxed">View through all the different features of YuktiAI and how you can make the best use of it</p>
-                        </div>
-                    </div>
-
-                    <div className="my-6 p-4 rounded-xl bg-blue-50/40 text-center border border-blue-50/50">
-                        <p className="text-[13.5px] font-medium text-zinc-800">Not sure where to begin? Open a sample case to see the YuktiAI workflow in action.</p>
-                    </div>
 
                     {/* Case Management Card */}
                     <div className="bg-white border border-[#e5e7eb] rounded-xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
@@ -250,30 +225,43 @@ export default function DashboardPage() {
             </div>
 
             {/* Right Sidebar for Quick Prompts */}
-            <div className="w-full md:w-[300px] xl:w-[320px] bg-white border-t md:border-l md:border-t-0 border-zinc-100 flex-shrink-0 h-auto md:h-screen overflow-y-auto px-4 py-8 md:px-6 scrollbar-thin scrollbar-thumb-zinc-200">
-                <h3 className="font-serif text-[18px] font-semibold text-zinc-900 tracking-tight mb-6 mt-2">Quick Prompts</h3>
-                <div className="space-y-4">
-                    {quickPrompts.map((prompt, idx) => (
-                        <Link
-                            key={idx}
-                            href={prompt.href}
-                            className="block p-[18px] bg-white border border-[#e5e7eb] rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-zinc-300 transition-all group"
-                        >
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center text-blue-800">
-                                        <prompt.icon className="w-[18px] h-[18px]" strokeWidth={2} />
-                                    </div>
-                                    <h4 className="text-[14px] font-bold text-zinc-900 group-hover:text-blue-700 transition-colors">{prompt.title}</h4>
-                                </div>
-                                <ExternalLink className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
-                            </div>
-                            <p className="text-[13px] text-zinc-500 leading-relaxed pr-2">
-                                {prompt.desc}
-                            </p>
-                        </Link>
-                    ))}
+            <div className={`transition-all duration-300 bg-white border-t md:border-l md:border-t-0 border-zinc-100 flex-shrink-0 h-auto md:h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 ${isQuickPromptsOpen ? 'w-full md:w-[300px] xl:w-[320px] px-4 py-8 md:px-6' : 'w-full md:w-[68px] px-4 py-8 md:px-2 flex flex-col items-center'}`}>
+                <div className={`flex items-center ${isQuickPromptsOpen ? 'justify-between' : 'justify-between md:justify-center'} mb-6 mt-2 w-full`}>
+                    <h3 className={`font-serif text-[18px] font-semibold text-zinc-900 tracking-tight ${!isQuickPromptsOpen ? 'md:hidden' : ''}`}>
+                        Quick Prompts
+                    </h3>
+                    <button
+                        onClick={() => setIsQuickPromptsOpen(!isQuickPromptsOpen)}
+                        className="text-zinc-500 hover:text-zinc-900 transition-colors p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 flex-shrink-0"
+                        title={isQuickPromptsOpen ? "Collapse Prompts" : "Expand Prompts"}
+                    >
+                        {isQuickPromptsOpen ? <PanelRightClose className="w-5 h-5" /> : <PanelRightOpen className="w-5 h-5" />}
+                    </button>
                 </div>
+                {isQuickPromptsOpen && (
+                    <div className="space-y-4 w-full">
+                        {quickPrompts.map((prompt, idx) => (
+                            <Link
+                                key={idx}
+                                href={prompt.href}
+                                className="block p-[18px] bg-white border border-[#e5e7eb] rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-zinc-300 transition-all group"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-blue-50/50 flex items-center justify-center text-blue-800">
+                                            <prompt.icon className="w-[18px] h-[18px]" strokeWidth={2} />
+                                        </div>
+                                        <h4 className="text-[14px] font-bold text-zinc-900 group-hover:text-blue-700 transition-colors">{prompt.title}</h4>
+                                    </div>
+                                    <ExternalLink className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                                </div>
+                                <p className="text-[13px] text-zinc-500 leading-relaxed pr-2">
+                                    {prompt.desc}
+                                </p>
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

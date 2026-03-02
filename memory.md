@@ -1,7 +1,7 @@
 # YuktiAI (Lawbot) — Project Memory
 
-> Last updated: 2026-03-01 (Session 4 — Feature Expansion & Production Hardening)  
-> Repository: https://github.com/SizzorOP/lawbot
+> Last updated: 2026-03-02 (Session 5 — Auth, Mobile & Dashboard Refinement)  
+> Repository: https://github.com/SizzorOP/YuktiAI
 
 ---
 
@@ -16,9 +16,10 @@
 | Backend | FastAPI (Python), Uvicorn, SQLAlchemy ORM, SQLite |
 | LLM | OpenAI GPT-4o (`gpt-4o-2024-08-06`) with structured JSON outputs |
 | APIs | Indian Kanoon API, SerpAPI (Google Search) |
-| Database | SQLite (via SQLAlchemy + aiosqlite) — swappable to PostgreSQL |
-| File Storage | Local `uploads/` directory (UUID-based naming) |
-| Deployment | Local dev (uvicorn + next dev) |
+| Database | SQLite (via SQLAlchemy + aiosqlite) — migrating to Supabase PostgreSQL |
+| Authentication | Supabase Auth (Email + Password, Email Verification) |
+| Layout | Mobile Responsive (Top Bar + Drawer) + Fixed Desktop Sidebar |
+| Deployment | Vercel (Frontend), FastAPI (Backend) |
 
 ### Environment Variables Required (`.env`)
 ```
@@ -59,10 +60,11 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 | `routers/documents.py` | `/api/cases/{id}/documents` | File upload/download with UUID naming, size/type validation |
 | `routers/calendar.py` | `/api/calendar/events` | Calendar event CRUD, date-range queries, case linking |
 
-### Security Layers (implemented in `main.py`)
-- **CORS Mitigation**: Restricted to `localhost:3000` to prevent cross-origin script attacks.
-- **TrustedHostMiddleware**: Mitigates Host Header Injection by enforcing specific host allowlists.
-- **SecurityHeadersMiddleware**: Custom middleware adding `X-Frame-Options`, `X-Content-Type-Options`, and suppressing server signatures.
+### Security & Authentication
+- **Supabase Auth**: Implemented Email/Password authentication with mandatory email verification.
+- **Protected Routes**: Middleware and `AppShell` logic redirect unauthenticated users to `/login`.
+- **CORS Mitigation**: Restricted to production domains and `localhost:3000`.
+- **SecurityHeadersMiddleware**: Custom middleware adding `X-Frame-Options`, `X-Content-Type-Options`.
 
 ---
 
@@ -90,17 +92,10 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 ### Frontend (`ui/`)
 | File | Purpose |
 |---|---|
-| `src/app/page.tsx` | Dashboard: News Spotlight (Analyse Legally), Case Management overview |
-| `src/app/research/page.tsx` | Research chat: tab-persistent history (localStorage), URL auto-prompt |
-| `src/app/library/page.tsx` | Legal Library: Acts/Judgments search with deep hierarchical filters |
-| `src/app/drafting/page.tsx` | Drafting Dashboard: File-management style view for legal drafts |
-| `src/app/drafting/new/page.tsx` | Drafting Wizard: 3-step creation flow with floating anchored input |
-| `src/app/meeting/page.tsx` | Meeting Assistant: A/V file upload with transcription & summary capability |
-| `src/app/cases/page.tsx` | Cases dashboard: search, filter by status, create case modal |
-| `src/app/cases/[id]/page.tsx` | Case detail: 3 tabs (Overview, Documents, Calendar) |
-| `src/app/calendar/page.tsx` | Calendar: date-grouped timeline, type filters, event creation |
-| `src/components/Sidebar.tsx` | Collapsible sidebar: 10 nav items, logo, user profile |
-| `src/components/AppShell.tsx` | Layout wrapper: fixed sidebar + offset main content |
+| `src/app/page.tsx` | Dashboard: News Spotlight (2-column grid), Stretched Onboarding Cards, Mobile Responsive |
+| `src/app/research/page.tsx` | Research chat: tab-persistent history, Mobile-optimized input bar |
+| `src/components/MobileHeader.tsx` | Mobile-only top bar with hamburger navigation drawer |
+| `src/components/AppShell.tsx` | Layout wrapper: fixed sidebar (desktop) / mobile header (mobile) |
 | `src/components/CaseCard.tsx` | Case summary card for dashboard grid |
 | `src/components/DocumentUpload.tsx` | Drag-and-drop file uploader with validation |
 | `src/lib/api.ts` | Typed API client for cases, documents, calendar endpoints |
@@ -120,15 +115,15 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 
 ## 4. Bugs Fixed (Debugging Log)
 
-### Bug 8: Missing OPENAI_API_KEY in Backend Lifecycle
-- **Symptom**: HTTP 500 on `/api/query` when clicking "Analyse Legally"
-- **Root Cause**: `Navigation Router` crashed because `os.getenv` was called before `load_dotenv` or before environment propagation in zombie processes.
-- **Fix**: Force-terminated stale uvicorn processes. Patched `main.py` to call `load_dotenv(override=True)` at the absolute top of the module to guarantee key visibility.
+### Bug 10: Tailwind Dynamic Class Breakage
+- **Symptom**: Sidebar padding disappeared on desktop after mobile update.
+- **Root Cause**: Tailwind JIT cannot parse dynamic keys like `md:pl-[${sideWidth}]`.
+- **Fix**: Re-implemented static conditional classes (`isCollapsed ? 'md:pl-[72px]' : 'md:pl-[260px]'`) to ensure PurgeCSS/JIT picks up tokens.
 
-### Bug 9: Double-firing Research Queries
-- **Symptom**: User saw two duplicate questions and two error/responses for one click.
-- **Root Cause**: React StrictMode double-rendering the `useEffect` hook. `useState` flag was too slow to block the second call.
-- **Fix**: Switched to `useRef` for a synchronous "session-level" guard flag in `research/page.tsx`.
+### Bug 11: News RSS HTML Leak
+- **Symptom**: Raw `<a href>` tags and encoded entities appearing in news summaries.
+- **Root Cause**: Google News RSS encodes HTML summaries which simple regex was missing.
+- **Fix**: Updated `stripHtml` in API route to decode entities `&lt;` → `<` before stripping tags.
 
 ---
 
@@ -156,8 +151,11 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 
 11. **Browser Persistence**: `/research` utilizes `localStorage` to preserve message history across page navigations, providing a seamless "tab-switchable" experience.
 
-12. **News Spotlight Logic**: Dashboard features a legal news feed where "Analyse Legally" pre-generates complex analysis prompts and directs the user to the Research module with automatic query execution.
+14. **Supabase Auth Integration**: Native Next.js auth flow with route guards in `AppShell` and profile fetching from public tables.
 
+15. **Mobile-First Navigation**: Introduced `MobileHeader` with a slide-out drawer that embeds the same `Sidebar` component, reducing code duplication.
+
+16. **Responsive Dashboard Grid**: News Spotlight uses `grid-cols-1 lg:grid-cols-2` to balance information density on varied screen sizes.
 ---
 
 ## 6. Test Results (12/12 Passed)
@@ -226,13 +224,11 @@ npx next dev
 - ~~**No file upload**: Document processor only works with pasted text, not PDF uploads~~ ✅ **RESOLVED** — Document upload via drag-and-drop with file validation
 - ~~**No state management**: No database, no case tracking~~ ✅ **RESOLVED** — SQLite + SQLAlchemy, full CRUD for cases/docs/events
 - ~~**No conversation memory**: Each query is independent; no multi-turn chat context~~ ✅ **RESOLVED** — Tab-persistent memory implemented for Research module
-- **No authentication**: API is open, no user sessions
-- **Single LLM provider**: Locked to OpenAI GPT-4o; no fallback to other providers
-- **No caching**: Every query hits the LLM and APIs fresh
+- ~~**No authentication**: API is open, no user sessions~~ ✅ **RESOLVED** — Supabase Auth integrated with profile management
+- ~~**Dynamic dashboard data**: Dashboard currently shows static "No cases found"~~ ✅ **RESOLVED** — Live legal news grid with dual-column layout
+- **Dark Mode consistency**: Dark mode is implemented but needs polish on specialized tool pages (Meeting, Translation)
 - **WhatsApp integration**: Planned but not yet implemented
-- **Cloud storage**: Documents stored locally in `uploads/`; needs migration to S3/GCS for production
-- ~~**Dynamic dashboard data**: Dashboard currently shows static "No cases found"~~ ✅ **RESOLVED** — News Spotlight features live legal developments with interactive analysis
-
+- **Cloud storage**: Documents stored locally in `uploads/`; needs migration to S3/GCS or Supabase Storage bucket for production
 ---
 
 ## 10. Frontend Pages (Route Map)
