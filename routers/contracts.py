@@ -85,8 +85,11 @@ def analyze_contract(req: ContractAnalyzeRequest, db: Session = Depends(get_db))
         }
     except Exception as e:
         if 'analysis_record' in locals():
-            analysis_record.status = "failed"
-            db.commit()
+            try:
+                analysis_record.status = "failed"
+                db.commit()
+            except Exception:
+                db.rollback()
         raise HTTPException(status_code=500, detail=f"Analysis Error: {str(e)}")
 
 

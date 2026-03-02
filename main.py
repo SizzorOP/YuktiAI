@@ -10,6 +10,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 import uvicorn
+import traceback
+from fastapi.responses import JSONResponse
 
 # Import router and tools
 from navigation.router import map_intent_to_tool
@@ -44,7 +46,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_details = traceback.format_exc()
+    print("GLOBAL EXCEPTION:", error_details)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error_message": str(exc), "traceback": error_details}
+    )
 
 # Allow all frontend origins to prevent CORS errors across Vercel/Netlify/Local testing
 allow_origins = ["*"]
