@@ -1,7 +1,9 @@
 import json
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import PyPDF2
+from io import BytesIO
 
 from database import get_db
 from models import ContractAnalysis
@@ -24,6 +26,31 @@ class ClauseRewriteRequest(BaseModel):
 
 class ClausePrecedentRequest(BaseModel):
     clause_text: str
+
+@router.post("/upload")
+async def upload_contract_pdf(file: UploadFile = File(...)):
+    """Upload a PDF contract and extract its text."""
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    
+    try:
+        contents = await file.read()
+        pdf_reader = PyPDF2.PdfReader(BytesIO(contents))
+        
+        extracted_text = []
+        for page in pdf_reader.pages:
+            text = page.extract_text()
+            if text:
+                extracted_text.append(text)
+                
+        full_text = "\n".join(extracted_text)
+        
+        if not full_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from the PDF. It might be scanned or image-based.")
+            
+        return {"text": full_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")
 
 @router.post("/analyze")
 def analyze_contract(req: ContractAnalyzeRequest, db: Session = Depends(get_db)):

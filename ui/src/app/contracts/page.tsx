@@ -14,6 +14,7 @@ interface Clause {
 export default function ContractsPage() {
     const [contractText, setContractText] = useState("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [clauses, setClauses] = useState<Clause[]>([]);
 
     // For handling per-clause actions
@@ -43,6 +44,42 @@ export default function ContractsPage() {
             alert("An error occurred while analyzing the contract.");
         } finally {
             setIsAnalyzing(false);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+            alert("Please upload a PDF file.");
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/api/contracts/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || "Failed to scan PDF");
+            }
+
+            const data = await res.json();
+            setContractText(data.text);
+        } catch (error: any) {
+            console.error("Upload Error:", error);
+            alert(error.message || "An error occurred while uploading the PDF.");
+        } finally {
+            setIsUploading(false);
+            // Reset the file input so the same file could be uploaded again if needed
+            e.target.value = "";
         }
     };
 
@@ -110,14 +147,27 @@ export default function ContractsPage() {
                     </div>
                 </div>
 
-                <button
-                    onClick={handleAnalyze}
-                    disabled={isAnalyzing || !contractText.trim()}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl text-[13px] font-semibold shadow-sm transition-colors"
-                >
-                    {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                    Analyze Contract
-                </button>
+                <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-xl text-[13px] font-semibold cursor-pointer shadow-sm transition-colors">
+                        {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        Upload PDF
+                        <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={handleFileUpload}
+                            disabled={isUploading || isAnalyzing}
+                        />
+                    </label>
+                    <button
+                        onClick={handleAnalyze}
+                        disabled={isAnalyzing || !contractText.trim()}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl text-[13px] font-semibold shadow-sm transition-colors"
+                    >
+                        {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                        Analyze Contract
+                    </button>
+                </div>
             </div>
 
             {/* Split View */}
@@ -157,7 +207,7 @@ export default function ContractsPage() {
                                 </div>
                                 <h3 className="text-[16px] font-semibold text-zinc-900 mb-2">No Analysis Yet</h3>
                                 <p className="text-[14px] text-zinc-500 max-w-sm">
-                                    Paste a contract on the left and click "Analyze" to automatically extract and score its material clauses.
+                                    Paste a contract on the left or upload a PDF to automatically extract and score its material clauses.
                                 </p>
                             </div>
                         ) : isAnalyzing ? (
