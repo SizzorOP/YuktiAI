@@ -166,7 +166,10 @@ export default function DashboardPage() {
                                 <p className="text-[13px] text-zinc-400">Loading latest legal news...</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6 bg-zinc-50/30">
+                            <div
+                                className="grid gap-4 md:gap-6 p-4 md:p-6 bg-zinc-50/30"
+                                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))" }}
+                            >
                                 {newsItems.map((news) => (
                                     <div key={news.id} className="p-4 flex flex-col sm:flex-row gap-4 md:gap-5 group bg-white border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-xl hover:shadow-md transition-all">
                                         {/* News Thumbnail */}
@@ -200,18 +203,19 @@ export default function DashboardPage() {
                                                     </a>
                                                 )}
                                                 {(!news.link || news.link === "#") && (
-                                                    <button className="text-[13px] font-semibold text-blue-700 hover:text-blue-800 transition-colors">
+                                                    <span className="text-[13px] font-semibold text-blue-700 opacity-50">
                                                         Read more
-                                                    </button>
+                                                    </span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 gap-3">
-                                                <span className="text-[12px] text-zinc-400">{news.date}</span>
+                                            <div className="flex flex-wrap items-center justify-between pt-4 mt-auto gap-3">
+                                                <span className="text-[12px] text-zinc-400 font-medium">{news.date}</span>
                                                 <button
                                                     onClick={() => handleAnalyseLegally(news.analysePrompt)}
-                                                    className="w-full sm:w-auto px-5 py-2 bg-[#2d2d2d] hover:bg-black text-white text-[12px] font-semibold rounded-lg transition-colors shadow-sm whitespace-nowrap"
+                                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-900 hover:bg-black text-white text-[12px] font-semibold rounded-lg transition-all shadow-sm group-hover:shadow-md"
                                                 >
-                                                    Analyse Legally
+                                                    <Search className="w-3.5 h-3.5 text-zinc-400" />
+                                                    <span>Analyse Legally</span>
                                                 </button>
                                             </div>
                                         </div>
