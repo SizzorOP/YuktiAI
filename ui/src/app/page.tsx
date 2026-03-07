@@ -168,57 +168,73 @@ export default function DashboardPage() {
                         ) : (
                             <div
                                 className="grid gap-4 md:gap-6 p-4 md:p-6 bg-zinc-50/30"
-                                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))" }}
+                                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))" }}
                             >
                                 {newsItems.map((news) => (
-                                    <div key={news.id} className="p-4 flex flex-col sm:flex-row gap-4 md:gap-5 group bg-white border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-xl hover:shadow-md transition-all">
-                                        {/* News Thumbnail */}
-                                        <div className="w-full sm:w-[140px] 2xl:w-[180px] h-48 sm:h-auto rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100">
+                                    <div key={news.id} className="group relative flex flex-col bg-white border border-zinc-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-2xl hover:shadow-lg hover:border-zinc-300 transition-all overflow-hidden h-full">
+
+                                        {/* Image Banner */}
+                                        <div className="w-full h-40 sm:h-48 bg-zinc-100 overflow-hidden relative border-b border-zinc-100">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={news.image}
                                                 alt={news.title}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                                             />
+                                            {/* Gradient overlay to ensure text/button readability */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                            {/* Floating Analyse Legally Button (Desktop Hover) */}
+                                            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 hidden sm:block">
+                                                <button
+                                                    onClick={() => handleAnalyseLegally(news.analysePrompt)}
+                                                    className="bg-zinc-900/95 backdrop-blur-md hover:bg-black text-white px-4 py-2 rounded-xl text-[13px] font-semibold shadow-xl border border-zinc-700/50 inline-flex items-center gap-2 transform active:scale-95 transition-all"
+                                                >
+                                                    <Search className="w-3.5 h-3.5" strokeWidth={2.5} /> Analyse Legally
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        {/* News Content */}
-                                        <div className="flex-1 flex flex-col justify-between min-w-0">
-                                            <div>
-                                                <h3 className="text-[15px] font-bold text-zinc-900 mb-3 leading-snug">
+                                        {/* Content Area */}
+                                        <div className="p-5 flex-1 flex flex-col">
+                                            <div className="flex-1">
+                                                <h3 className="text-[15px] font-bold text-zinc-900 mb-2 leading-snug line-clamp-3 group-hover:text-blue-700 transition-colors">
                                                     {news.title}
                                                 </h3>
-                                                <p className="text-[13px] text-zinc-500 leading-relaxed mb-3">
+                                                <p className="text-[13px] text-zinc-500 leading-relaxed line-clamp-3 mb-4">
                                                     {news.summary}
                                                 </p>
-                                                {news.link && news.link !== "#" && (
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center justify-between mt-auto gap-3 pt-3 border-t border-zinc-100">
+                                                <span className="text-[12px] text-zinc-400 font-medium tracking-wide uppercase">{news.date}</span>
+                                                {news.link && news.link !== "#" ? (
                                                     <a
                                                         href={news.link}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-[13px] font-semibold text-blue-700 hover:text-blue-800 transition-colors inline-flex items-center gap-1"
+                                                        className="text-[13px] font-bold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1.5"
                                                     >
-                                                        Read more
-                                                        <ExternalLink className="w-3 h-3" />
+                                                        Read Article <ExternalLink className="w-3.5 h-3.5" />
                                                     </a>
-                                                )}
-                                                {(!news.link || news.link === "#") && (
-                                                    <span className="text-[13px] font-semibold text-blue-700 opacity-50">
-                                                        Read more
+                                                ) : (
+                                                    <span className="text-[13px] font-bold text-blue-600/50">
+                                                        Read Article
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-wrap items-center justify-between pt-4 mt-auto gap-3">
-                                                <span className="text-[12px] text-zinc-400 font-medium">{news.date}</span>
-                                                <button
-                                                    onClick={() => handleAnalyseLegally(news.analysePrompt)}
-                                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-900 hover:bg-black text-white text-[12px] font-semibold rounded-lg transition-all shadow-sm group-hover:shadow-md"
-                                                >
-                                                    <Search className="w-3.5 h-3.5 text-zinc-400" />
-                                                    <span>Analyse Legally</span>
-                                                </button>
-                                            </div>
                                         </div>
+
+                                        {/* Floating Button Fallback (Mobile Permanent) */}
+                                        <div className="sm:hidden p-3 bg-zinc-50/80 border-t border-zinc-100">
+                                            <button
+                                                onClick={() => handleAnalyseLegally(news.analysePrompt)}
+                                                className="w-full bg-zinc-900 hover:bg-black text-white px-4 py-2.5 rounded-xl text-[13px] font-semibold shadow-md inline-flex items-center justify-center gap-2 active:scale-95 transition-all"
+                                            >
+                                                <Search className="w-4 h-4" strokeWidth={2.5} /> Analyse Legally
+                                            </button>
+                                        </div>
+
                                     </div>
                                 ))}
                             </div>
