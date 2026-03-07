@@ -128,6 +128,11 @@ async function fetchLegalNews(): Promise<NewsItem[]> {
         }
     }
 
+    // Sort by Date descending (most recent first)
+    allItems.sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+
     // Return up to 6 items, sorted by most recent
     return allItems.slice(0, 6);
 }

@@ -223,7 +223,7 @@ export default function ContractsPage() {
                 {/* Right Side: Analysis Results */}
                 <div className="flex-1 lg:w-1/2 bg-zinc-50/30 flex flex-col min-h-0 relative">
                     <div className="px-5 py-3 border-b border-zinc-100 bg-white flex items-center justify-between shadow-sm z-10">
-                        <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-wider">Clause Intelligence Intelligence</span>
+                        <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-wider">Clause Intelligence</span>
                         <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 uppercase tracking-wider"><span className="w-2 h-2 rounded-full bg-red-500"></span> High Risk</span>
                             <span className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 uppercase tracking-wider"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Medium</span>

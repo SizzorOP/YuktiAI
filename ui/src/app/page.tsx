@@ -205,11 +205,11 @@ export default function DashboardPage() {
                                                     </button>
                                                 )}
                                             </div>
-                                            <div className="flex items-center justify-between pt-3">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 gap-3">
                                                 <span className="text-[12px] text-zinc-400">{news.date}</span>
                                                 <button
                                                     onClick={() => handleAnalyseLegally(news.analysePrompt)}
-                                                    className="px-5 py-2 bg-[#2d2d2d] hover:bg-black text-white text-[12px] font-semibold rounded-lg transition-colors shadow-sm"
+                                                    className="w-full sm:w-auto px-5 py-2 bg-[#2d2d2d] hover:bg-black text-white text-[12px] font-semibold rounded-lg transition-colors shadow-sm whitespace-nowrap"
                                                 >
                                                     Analyse Legally
                                                 </button>

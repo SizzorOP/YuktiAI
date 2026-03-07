@@ -14,5 +14,5 @@ export async function GET(request: Request) {
     }
 
     // Redirect to the dashboard after successful verification
-    return NextResponse.redirect(`${origin}/`);
+    return NextResponse.redirect(`${origin}/email-confirmed`);
 }

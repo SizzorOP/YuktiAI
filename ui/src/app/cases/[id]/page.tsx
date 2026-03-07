@@ -71,6 +71,17 @@ export default function CaseDetailPage() {
         }
     };
 
+    const handleDeleteCase = async () => {
+        if (!confirm("Are you sure you want to delete this case? This action cannot be undone and will also delete all associated documents and calendar events.")) return;
+        try {
+            await casesApi.delete(caseId);
+            router.push("/cases");
+        } catch (err) {
+            console.error("Failed to delete case:", err);
+            alert("Failed to delete the case. Please try again.");
+        }
+    };
+
     const handleDeleteEvent = async (eventId: string) => {
         if (!confirm("Delete this event?")) return;
         try {
@@ -209,7 +220,15 @@ export default function CaseDetailPage() {
                         )}
                     </div>
                     <div className="text-xs text-zinc-400">
-                        Created {formatDate(caseData.created_at)}
+                        <div className="flex flex-col items-end gap-2">
+                            <span>Created {formatDate(caseData.created_at)}</span>
+                            <button
+                                onClick={handleDeleteCase}
+                                className="text-red-500 hover:text-red-700 font-medium transition-colors flex items-center gap-1.5 px-2 py-1 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" /> Delete Case
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -221,8 +240,8 @@ export default function CaseDetailPage() {
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab.key
-                                ? "border-blue-600 text-blue-700 dark:text-blue-400"
-                                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                            ? "border-blue-600 text-blue-700 dark:text-blue-400"
+                            : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                             }`}
                     >
                         {tab.icon}
@@ -348,10 +367,10 @@ export default function CaseDetailPage() {
                                     <div className="flex items-start gap-3">
                                         <div
                                             className={`w-2 h-2 rounded-full mt-2 shrink-0 ${event.event_type === "hearing"
-                                                    ? "bg-blue-500"
-                                                    : event.event_type === "deadline"
-                                                        ? "bg-red-500"
-                                                        : "bg-amber-500"
+                                                ? "bg-blue-500"
+                                                : event.event_type === "deadline"
+                                                    ? "bg-red-500"
+                                                    : "bg-amber-500"
                                                 }`}
                                         />
                                         <div>
