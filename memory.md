@@ -1,6 +1,6 @@
 # YuktiAI (Lawbot) — Project Memory
 
-> Last updated: 2026-03-03 (Session 6 — Deployment, API Proxies & Document Management)  
+> Last updated: 2026-03-07 (Session 7 — UI Polishing, Drafting implementation & Backend Debugging)  
 > Repository: https://github.com/SizzorOP/YuktiAI
 
 ---
@@ -140,6 +140,24 @@ User Query → Navigation Router (GPT-4o) → Tool Execution → Structured Resp
 - **Root Cause**: First, `DATABASE_URL` was incorrectly formatted for Supabase's IPv4 pooler (`FATAL: Tenant or user not found`). Second, the backend exception handler tried to do `db.commit()` to save the error state, which triggered *another* database connection error (double-fault), overriding FastAPI's JSON response with a raw Starlette plain-text 500.
 - **Fix**: Wrapped the exception handler's `db.commit()` in a `try-except` block to prevent double-faults. Added a global `app.exception_handler(Exception)` to `main.py` temporarily to expose the raw traceback. Finally, corrected the `DATABASE_URL` on Render to use `aws-0-ap-south-1.pooler.supabase.com:6543` and the correct username `postgres.ebamudkznnzzdiqsdjvh`.
 
+### Bug 15: Case Deletion Missing
+- **Symptom**: No way to delete a case from the UI.
+- **Fix**: Added "Delete Case" button to `CaseDetailPage` with a confirmation dialogue and backend route implementation.
+
+### Bug 16: Drafting Module Wiring
+- **Symptom**: "New Draft" prompt didn't trigger any action.
+- **Fix**: Fully wired up `ui/src/app/drafting/new/page.tsx` to call the `/api/query` endpoint, handle loading states, and render the generated legal template using `react-markdown`.
+
+### Bug 17: Dashboard Button Overflow
+- **Symptom**: "Analyse Legally" button was cut off on narrow windows.
+- **Fix**: Redesigned news cards with a vertical layout and a floating "Analyse Legally" button that correctly wraps or hide/shows based on container width.
+
+### Bug 18: Supabase PGRST116 (406) Error
+- **Symptom**: Infinite loading on Case/Contract pages for new users.
+- **Root Cause**: `supabase.from('profiles').select().single()` returns a 406 (PGRST116) error if the user profile row doesn't exist yet, blocking the auth state.
+- **Fix**: Updated `AuthContext.tsx` to gracefully handle missing profiles by providing a fallback profile object, allowing the UI to render while the user stays authenticated.
+
+
 ---
 
 ## 5. Design Decisions
@@ -243,11 +261,13 @@ npx next dev
 - ~~**No state management**: No database, no case tracking~~ ✅ **RESOLVED** — SQLite + SQLAlchemy, full CRUD for cases/docs/events
 - ~~**No conversation memory**: Each query is independent; no multi-turn chat context~~ ✅ **RESOLVED** — Tab-persistent memory implemented for Research module
 - ~~**No authentication**: API is open, no user sessions~~ ✅ **RESOLVED** — Supabase Auth integrated with profile management
-- ~~**Dynamic dashboard data**: Dashboard currently shows static "No cases found"~~ ✅ **RESOLVED** — Live legal news grid with dual-column layout
+- ~~**Dynamic dashboard data**: Dashboard currently shows static "No cases found"~~ ✅ **RESOLVED** — Live legal news grid with latest-first sorting
 - **Dark Mode consistency**: Dark mode is implemented but needs polish on specialized tool pages (Meeting, Translation)
 - **WhatsApp integration**: Planned but not yet implemented
 - **Cloud storage**: Documents stored locally in `uploads/`; needs migration to S3/GCS or Supabase Storage bucket for production
+- **Backend Deployment Connectivity**: Live frontend (Vercel) currently expects a remote backend; infinite loading occurs if `NEXT_PUBLIC_API_URL` points to a non-accessible localhost. Needs production backend deployment.
 ---
+
 
 ## 10. Frontend Pages (Route Map)
 
@@ -258,6 +278,8 @@ npx next dev
 | `/cases` | Cases Dashboard | Search/filter cases, create new case modal, case cards grid |
 | `/cases/[id]` | Case Detail | 3-tab view: Overview, Documents (drag-drop upload), Calendar events |
 | `/calendar` | Calendar | Date-grouped event timeline, type filters, create event modal |
+| `/email-confirmed` | Email Success | Friendly "Congratulations" screen after email verification |
+
 
 ---
 
