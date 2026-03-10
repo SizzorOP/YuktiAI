@@ -1,5 +1,6 @@
 import { Card } from "./ui/card";
 import { AlertTriangle, CheckCircle, Clock, BookOpen, PenTool } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export function ResultRenderer({ content, metadata }: { content: string, metadata: any }) {
 
@@ -45,8 +46,8 @@ export function ResultRenderer({ content, metadata }: { content: string, metadat
     if (type === "general_chat" && results) {
         return (
             <div className="flex flex-col gap-4">
-                <div className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 text-sm md:text-base leading-relaxed">
-                    {results.answer}
+                <div className="prose prose-zinc dark:prose-invert max-w-none text-sm md:text-base leading-relaxed">
+                    <ReactMarkdown>{results.answer}</ReactMarkdown>
                 </div>
 
                 {results.citations && results.citations.length > 0 && (
@@ -187,8 +188,8 @@ export function ResultRenderer({ content, metadata }: { content: string, metadat
     if (type === "drafting_agent" && results) {
         return (
             <div className="flex flex-col gap-4">
-                <div className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 text-sm md:text-base leading-relaxed">
-                    {results.response_message}
+                <div className="prose prose-zinc dark:prose-invert max-w-none text-sm md:text-base leading-relaxed">
+                    <ReactMarkdown>{results.response_message}</ReactMarkdown>
                 </div>
 
                 {results.is_draft_type_clear && results.generated_template && (
