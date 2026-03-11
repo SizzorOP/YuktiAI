@@ -1,5 +1,4 @@
 import { ChatMessage } from '@/types';
-import { ScrollArea } from './ui/scroll-area';
 import { Bot, User } from 'lucide-react';
 import { ResultRenderer } from './ResultRenderer';
 
@@ -7,8 +6,8 @@ export function MessageList({ messages }: { messages: ChatMessage[] }) {
     if (messages.length === 0) return null;
 
     return (
-        <ScrollArea className="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 mb-4 h-full">
-            <div className="flex flex-col gap-6 w-full pb-8">
+        <div className="w-full pt-4 md:pt-6">
+            <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto px-4 md:px-6 pb-4">
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex w-full gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.role === 'assistant' && (
@@ -40,6 +39,6 @@ export function MessageList({ messages }: { messages: ChatMessage[] }) {
                     </div>
                 ))}
             </div>
-        </ScrollArea>
+        </div>
     );
 }

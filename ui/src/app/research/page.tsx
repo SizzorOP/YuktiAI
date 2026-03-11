@@ -257,15 +257,15 @@ function ResearchContent() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         <div
-          className={`flex flex-col mx-auto px-4 transition-all duration-700 ease-in-out w-full
+          className={`flex flex-col transition-all duration-700 ease-in-out w-full
           ${hasStarted
-              ? "pt-6 max-w-5xl flex-1 min-h-0"
-              : "justify-center items-center h-full"
+              ? "pt-6 flex-1 min-h-0"
+              : "justify-center items-center h-full px-4"
             }`}
         >
           {/* Empty State */}
           {!hasStarted && (
-            <div className="flex flex-col items-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+            <div className="flex flex-col items-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 max-w-3xl mx-auto w-full">
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-blue-200">
                 <Scale className="w-8 h-8 text-blue-600" />
               </div>
@@ -281,15 +281,15 @@ function ResearchContent() {
 
           <div
             className={`w-full transition-all duration-500 overflow-hidden ${hasStarted
-              ? "mb-32 flex-1 flex flex-col min-h-0"
-              : "max-w-3xl translate-y-0"
+              ? "flex-1 flex flex-col min-h-0"
+              : "max-w-3xl translate-y-0 mx-auto"
               }`}
           >
             {hasStarted && (
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto w-full">
                 <MessageList messages={messages} />
                 {isLoading && (
-                  <div className="max-w-4xl mx-auto px-4 md:px-6 -mt-24">
+                  <div className="max-w-4xl mx-auto px-4 md:px-6 pb-4">
                     <div className="flex items-start gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-sm mt-1">
                             <Scale className="w-4 h-4 text-blue-600 animate-pulse" />
