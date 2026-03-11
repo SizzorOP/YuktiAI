@@ -125,9 +125,25 @@ function ResearchContent() {
     [activeId]
   );
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleAbort = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  }, []);
+
   const handleSearch = useCallback(
     async (query: string) => {
       if (!query.trim()) return;
+
+      // Abort previous search if any
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
 
       // If no active session, create one
       let targetId = activeId;
@@ -166,6 +182,7 @@ function ResearchContent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
+          signal: abortControllerRef.current.signal,
         });
 
         if (!res.ok) throw new Error("API Request Failed");
@@ -189,7 +206,9 @@ function ResearchContent() {
               : s
           )
         );
-      } catch {
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+
         const errorMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -220,9 +239,9 @@ function ResearchContent() {
   }, [searchParams, handleSearch, isLoaded]);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] md:h-screen overflow-hidden font-sans text-zinc-900 selection:bg-blue-200">
+    <div className="flex h-[calc(100vh-64px)] md:h-screen overflow-hidden font-sans text-zinc-900 selection:bg-blue-200 bg-white dark:bg-zinc-950">
       {/* History Sidebar - Hidden on mobile for now */}
-      <div className="hidden md:flex h-full">
+      <div className="hidden md:flex h-full border-r border-zinc-100 dark:border-zinc-800">
         <ChatHistorySidebar
           sessions={sessions}
           activeSessionId={activeId}
@@ -262,36 +281,48 @@ function ResearchContent() {
 
           <div
             className={`w-full transition-all duration-500 overflow-hidden ${hasStarted
-              ? "mb-24 flex-1 flex flex-col min-h-0"
+              ? "mb-32 flex-1 flex flex-col min-h-0"
               : "max-w-3xl translate-y-0"
               }`}
           >
-            {hasStarted && <MessageList messages={messages} />}
+            {hasStarted && (
+              <div className="flex-1 overflow-y-auto">
+                <MessageList messages={messages} />
+                {isLoading && (
+                  <div className="max-w-4xl mx-auto px-4 md:px-6 -mt-24">
+                    <div className="flex items-start gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-sm mt-1">
+                            <Scale className="w-4 h-4 text-blue-600 animate-pulse" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-zinc-400 mb-3 ml-1 flex items-center gap-2">
+                                AI is researching...
+                            </p>
+                            <div className="flex flex-col gap-3 animate-pulse p-4 bg-zinc-50/50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                <div className="space-y-2">
+                                    <div className="h-4 w-full bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                                    <div className="h-4 w-5/6 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div
             className={`w-full transition-all duration-500 
             ${hasStarted
-                ? "fixed bottom-0 right-0 left-0 md:left-auto bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent pb-8 pt-12 px-4 z-40"
+                ? "sticky bottom-0 bg-gradient-to-t from-white via-white dark:from-zinc-950 dark:via-zinc-950 to-transparent pb-8 pt-12 px-4 z-40"
                 : ""
               }`}
-            style={
-              hasStarted
-                ? {
-                  // On desktop, offset by Main Sidebar (260) + Chat Sidebar (280 or 48)
-                  // We handle mobile by overriding left to 0 in CSS (left-0, which takes precedence if we don't set left in JS, or we do logic here)
-                  ...(typeof window !== 'undefined' && window.innerWidth >= 768
-                    ? { left: sidebarOpen ? "calc(260px + 280px)" : "calc(260px + 48px)" }
-                    : { left: 0 }
-                  )
-                }
-                : undefined
-            }
           >
             <div
               className={hasStarted ? "max-w-4xl mx-auto w-full" : "w-full"}
             >
-              <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+              <SearchBar onSearch={handleSearch} onAbort={handleAbort} isLoading={isLoading} />
             </div>
           </div>
         </div>

@@ -2,7 +2,26 @@ import { Card } from "./ui/card";
 import { AlertTriangle, CheckCircle, Clock, BookOpen, PenTool } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
+export function LoadingIndicator() {
+    return (
+        <div className="flex flex-col gap-3 animate-pulse p-4 bg-zinc-50/50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+            </div>
+            <div className="space-y-2">
+                <div className="h-4 w-full bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                <div className="h-4 w-5/6 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                <div className="h-4 w-4/6 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+            </div>
+        </div>
+    );
+}
+
 export function ResultRenderer({ content, metadata }: { content: string, metadata: any }) {
+    if (!content && (!metadata || !metadata.type)) {
+        return <LoadingIndicator />;
+    }
 
     if (!metadata || !metadata.type) {
         return <p className="whitespace-pre-wrap">{content}</p>;

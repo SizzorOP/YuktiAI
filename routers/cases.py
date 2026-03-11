@@ -4,7 +4,7 @@ Cases API Router — CRUD operations for case management.
 import os
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
 from models import Case
@@ -29,7 +29,10 @@ def list_cases(
     db: Session = Depends(get_db),
 ):
     """List all cases, optionally filtered by status."""
-    query = db.query(Case).order_by(Case.updated_at.desc())
+    query = db.query(Case).options(
+        joinedload(Case.documents),
+        joinedload(Case.calendar_events)
+    ).order_by(Case.updated_at.desc())
     if status_filter:
         query = query.filter(Case.status == status_filter)
     cases = query.all()
