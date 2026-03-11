@@ -51,10 +51,10 @@ def map_intent_to_tool(user_query: str) -> Dict[str, Any]:
                         "type": "object",
                         "description": "Key-value pairs extracted from the query needed by the target tool.",
                         "properties": {
-                            "query": {"type": "string"},
-                            "case_stage": {"type": "string"},
-                            "law_code": {"type": "string"},
-                            "draft_type": {"type": "string"}
+                            "query": {"type": ["string", "null"]},
+                            "case_stage": {"type": ["string", "null"]},
+                            "law_code": {"type": ["string", "null"]},
+                            "draft_type": {"type": ["string", "null"]}
                         },
                         "required": ["query", "case_stage", "law_code", "draft_type"],
                         "additionalProperties": False
