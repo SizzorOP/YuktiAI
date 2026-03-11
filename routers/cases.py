@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
-from models import Case
+from models import Case, Notification
 from schemas import CaseCreate, CaseUpdate, CaseResponse, CaseDetailResponse
 
 router = APIRouter(prefix="/api/cases", tags=["Cases"])
@@ -18,8 +18,24 @@ def create_case(payload: CaseCreate, db: Session = Depends(get_db)):
     """Create a new case."""
     new_case = Case(**payload.model_dump())
     db.add(new_case)
+    
+    # Generate notification
+    notification = Notification(
+        title="New Case Added",
+        message=f"Case '{payload.title}' was added successfully.",
+        type="success",
+        link=None
+    )
+    db.add(notification)
+    
     db.commit()
     db.refresh(new_case)
+    db.refresh(notification)
+    
+    # We update the link after getting the case ID
+    notification.link = f"/cases/{new_case.id}"
+    db.commit()
+
     return _to_case_response(new_case)
 
 

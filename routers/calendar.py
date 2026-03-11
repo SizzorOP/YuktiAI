@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import CalendarEvent, Case
+from models import CalendarEvent, Case, Notification
 from schemas import CalendarEventCreate, CalendarEventUpdate, CalendarEventResponse
 
 router = APIRouter(prefix="/api/calendar/events", tags=["Calendar"])
@@ -24,6 +24,16 @@ def create_event(payload: CalendarEventCreate, db: Session = Depends(get_db)):
 
     event = CalendarEvent(**payload.model_dump())
     db.add(event)
+    
+    # Generate Notification
+    notification = Notification(
+        title="New Calendar Event",
+        message=f"Event '{payload.title}' was scheduled for {payload.event_date.strftime('%Y-%m-%d %H:%M')}.",
+        type="info",
+        link="/calendar"
+    )
+    db.add(notification)
+    
     db.commit()
     db.refresh(event)
     return _to_event_response(event)

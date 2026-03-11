@@ -174,3 +174,28 @@ export const calendarApi = {
     delete: (id: string) =>
         request<void>(`/api/calendar/events/${id}`, { method: "DELETE" }),
 };
+
+// ─── Notifications ───────────────────────────────────────────
+
+export interface NotificationItem {
+    id: string;
+    title: string;
+    message: string;
+    type: string;
+    is_read: boolean;
+    link: string | null;
+    created_at: string;
+}
+
+export const notificationsApi = {
+    list: () => request<NotificationItem[]>("/api/notifications"),
+    
+    markAsRead: (id: string) => 
+        request<NotificationItem>(`/api/notifications/${id}/read`, { method: "PUT" }),
+        
+    markAllAsRead: () => 
+        request<{message: string}>("/api/notifications/read-all", { method: "PUT" }),
+        
+    delete: (id: string) => 
+        request<void>(`/api/notifications/${id}`, { method: "DELETE" }),
+};

@@ -102,3 +102,17 @@ class ContractAnalysis(Base):
 
     def __repr__(self):
         return f"<ContractAnalysis(id={self.id}, status={self.status})>"
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    type = Column(String(50), default="info") # info | success | warning | error
+    is_read = Column(Boolean, default=False)
+    link = Column(String(500), nullable=True) # Optional link to a related entity
+    created_at = Column(DateTime, default=utcnow)
+
+    def __repr__(self):
+        return f"<Notification(id={self.id}, title={self.title}, is_read={self.is_read})>"

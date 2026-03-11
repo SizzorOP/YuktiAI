@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { notificationsApi } from "@/lib/api";
 import {
     Bell,
     LayoutDashboard,
@@ -51,6 +52,7 @@ export function Sidebar({ isCollapsed, toggleSidebar, className = "" }: SidebarP
     const { profile, signOut } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const displayName = profile?.full_name || "User";
     const initials = displayName
@@ -70,6 +72,25 @@ export function Sidebar({ isCollapsed, toggleSidebar, className = "" }: SidebarP
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
     }, []);
+
+    // Fetch unread notifications count
+    useEffect(() => {
+        const fetchUnread = async () => {
+            if (!profile) return;
+            try {
+                const data = await notificationsApi.list();
+                setUnreadCount(data.filter(n => !n.is_read).length);
+            } catch (error) {
+                console.error("Failed to fetch notifications count", error);
+            }
+        };
+
+        fetchUnread();
+        
+        // Set up an interval to poll for new notifications
+        const interval = setInterval(fetchUnread, 30000);
+        return () => clearInterval(interval);
+    }, [pathname, profile]);
 
     const handleLogout = async () => {
         await signOut();
@@ -108,12 +129,33 @@ export function Sidebar({ isCollapsed, toggleSidebar, className = "" }: SidebarP
             <div className={`flex-1 overflow-y-auto py-6 space-y-1 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-700 ${isCollapsed ? 'px-2' : 'px-4'}`}>
                 {/* Notifications */}
                 <Link
-                    href="#"
-                    className={`flex items-center rounded-lg text-[13px] font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors mb-6 ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'}`}
+                    href="/notifications"
+                    className={`flex items-center rounded-lg text-[13px] font-medium transition-colors mb-6 ${
+                        pathname === "/notifications" 
+                            ? "bg-blue-50/80 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300" 
+                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50"
+                    } ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'}`}
                     title={isCollapsed ? "Notifications" : undefined}
                 >
-                    <Bell className={`w-4 h-4 shrink-0`} strokeWidth={2} />
-                    {!isCollapsed && "Notifications"}
+                    <div className="relative flex items-center justify-center">
+                        <Bell className={`w-4 h-4 shrink-0 ${pathname === "/notifications" ? "text-blue-700 dark:text-blue-400" : "text-zinc-500 dark:text-zinc-500"}`} strokeWidth={2} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white dark:border-zinc-900"></span>
+                            </span>
+                        )}
+                    </div>
+                    {!isCollapsed && (
+                        <div className="flex flex-1 items-center justify-between">
+                            <span>Notifications</span>
+                            {unreadCount > 0 && (
+                                <span className="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                    {unreadCount}
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </Link>
 
                 {/* Separator */}
