@@ -259,7 +259,7 @@ function ResearchContent() {
         <div
           className={`flex flex-col mx-auto px-4 transition-all duration-700 ease-in-out w-full
           ${hasStarted
-              ? "pt-6 items-start max-w-5xl flex-1 min-h-0"
+              ? "pt-6 max-w-5xl flex-1 min-h-0"
               : "justify-center items-center h-full"
             }`}
         >
@@ -315,7 +315,7 @@ function ResearchContent() {
           <div
             className={`w-full transition-all duration-500 
             ${hasStarted
-                ? "sticky bottom-0 bg-gradient-to-t from-white via-white dark:from-zinc-950 dark:via-zinc-950 to-transparent pb-8 pt-12 px-4 z-40"
+                ? "sticky bottom-0 bg-gradient-to-t from-white via-white dark:from-zinc-950 dark:via-zinc-950 to-transparent pb-6 pt-4 px-4 z-40"
                 : ""
               }`}
           >
