@@ -56,3 +56,4 @@
 
 ## 5. UI/UX Rules
 - **Responsive Design:** Whenever you create a page, make sure it is responsive each and every section, button, and all options should be fully working. Avoid non-functional placeholders.
+- **1-10 Grading Scale:** Continuously improve and rigorously test all functional and UI features until they are rated at least **9.5 or 10 on a 1-10 scale** (where 10 is the best). This uncompromising quality standard applies to all present and future tasks.

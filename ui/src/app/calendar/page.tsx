@@ -10,6 +10,7 @@ import {
     Loader2,
     ChevronLeft,
     ChevronRight,
+    Trash2,
 } from "lucide-react";
 
 export default function CalendarPage() {
@@ -17,6 +18,8 @@ export default function CalendarPage() {
     const [events, setEvents] = useState<CalendarEventItem[]>([]);
     const [cases, setCases] = useState<CaseItem[]>([]);
     const [creating, setCreating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
 
     // UI State
     const [showForm, setShowForm] = useState(false);
@@ -60,44 +63,92 @@ export default function CalendarPage() {
         loadCases();
     }, []);
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.title || !formData.event_date) return;
         setCreating(true);
         try {
-
-            // Generate full ISO datetime by combining date and start time
             const combinedDateTimeString = `${formData.event_date}T${formData.start_time}:00`;
 
             const payload = {
                 title: formData.title,
-                event_type: "hearing", // Preserving original model constraints for MVP fallback
+                event_type: "hearing" as any, 
                 category: formData.category,
                 event_date: new Date(combinedDateTimeString).toISOString(),
                 description: formData.description || undefined,
                 case_id: formData.case_id || undefined,
                 meeting_link: formData.category === "non-court" && formData.meeting_link ? formData.meeting_link : undefined,
+                location: (formData as any).location || undefined,
             };
 
-            await calendarApi.create(payload);
-            setFormData({
-                title: "",
-                category: "court",
-                case_id: "",
-                event_date: "",
-                start_time: "12:00",
-                end_time: "12:30",
-                meeting_link: "",
-                description: "",
-            });
-            setShowForm(false);
+            if (selectedEvent) {
+                await calendarApi.update(selectedEvent.id, payload);
+            } else {
+                await calendarApi.create(payload);
+            }
+
+            resetForm();
             loadEvents();
         } catch (err) {
-            console.error("Failed to create event:", err);
-            alert("Failed to create calendar event");
+            console.error("Failed to save event:", err);
+            alert("Failed to save calendar event");
         } finally {
             setCreating(false);
         }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedEvent) return;
+        if (!confirm("Are you sure you want to delete this event?")) return;
+        
+        setDeleting(true);
+        try {
+            await calendarApi.delete(selectedEvent.id);
+            resetForm();
+            loadEvents();
+        } catch (err) {
+            console.error("Failed to delete event:", err);
+            alert("Failed to delete calendar event");
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            title: "",
+            category: "court",
+            case_id: "",
+            event_date: "",
+            start_time: "12:00",
+            end_time: "12:30",
+            meeting_link: "",
+            description: "",
+        });
+        setSelectedEvent(null);
+        setShowForm(false);
+    };
+
+    const openEditForm = (event: CalendarEventItem) => {
+        const date = new Date(event.event_date);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+
+        setSelectedEvent(event);
+        setFormData({
+            title: event.title,
+            category: event.category,
+            case_id: event.case_id || "",
+            event_date: `${yyyy}-${mm}-${dd}`,
+            start_time: `${hh}:${min}`,
+            end_time: "12:30", // Fallback or logic to calculate end time
+            meeting_link: event.meeting_link || "",
+            description: event.description || "",
+        });
+        setShowForm(true);
     };
 
     // Calendar Math Helpers
@@ -239,6 +290,7 @@ export default function CalendarPage() {
                     <button
                         onClick={() => {
                             setFormData(prev => ({ ...prev, event_date: new Date().toISOString().split('T')[0] }));
+                            setSelectedEvent(null);
                             setShowForm(true);
                         }}
                         className="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ml-4 shadow-sm"
@@ -311,8 +363,10 @@ export default function CalendarPage() {
                                 return (
                                     <div
                                         key={idx}
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            if ((e.target as HTMLElement).closest('.event-pill')) return;
                                             setFormData(prev => ({ ...prev, event_date: dateStrKey }));
+                                            setSelectedEvent(null);
                                             setShowForm(true);
                                         }}
                                         className={`min-h-[100px] border-r border-b border-gray-100 p-2 cursor-pointer transition-colors
@@ -333,7 +387,11 @@ export default function CalendarPage() {
                                                 <div
                                                     key={event.id}
                                                     title={event.title}
-                                                    className={`px-2 py-1 text-xs truncate rounded border
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openEditForm(event);
+                                                    }}
+                                                    className={`event-pill px-2 py-1 text-xs truncate rounded border cursor-pointer hover:brightness-95 transition-all
                                                         ${event.category === 'non-court'
                                                             ? 'bg-orange-50 text-orange-700 border-orange-100'
                                                             : 'bg-blue-50 text-blue-700 border-blue-100'}
@@ -362,9 +420,11 @@ export default function CalendarPage() {
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden relative border border-gray-100">
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4">
-                            <h2 className="text-lg font-bold text-gray-900 font-serif">Create New Event</h2>
+                            <h2 className="text-lg font-bold text-gray-900 font-serif">
+                                {selectedEvent ? 'Edit Event' : 'Create New Event'}
+                            </h2>
                             <button
-                                onClick={() => setShowForm(false)}
+                                onClick={resetForm}
                                 className="text-gray-400 hover:text-gray-600 transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -372,7 +432,7 @@ export default function CalendarPage() {
                         </div>
 
                         {/* Body */}
-                        <form onSubmit={handleCreate} className="px-6 pb-6 space-y-4">
+                        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
 
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Event Name*</label>
@@ -503,22 +563,36 @@ export default function CalendarPage() {
                                 />
                             </div>
 
-                            <div className="flex justify-between gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                    className="flex-1 py-3 text-sm font-semibold text-gray-800 border border-gray-800 rounded-xl hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={creating}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
-                                >
-                                    {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                    Add Event
-                                </button>
+                            <div className="flex flex-col gap-3 pt-2">
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={resetForm}
+                                        className="flex-1 py-3 text-sm font-semibold text-gray-800 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={creating}
+                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-900 hover:bg-black disabled:bg-gray-400 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
+                                    >
+                                        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedEvent ? <Plus className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
+                                        {selectedEvent ? 'Update Event' : 'Add Event'}
+                                    </button>
+                                </div>
+
+                                {selectedEvent && (
+                                    <button
+                                        type="button"
+                                        onClick={handleDelete}
+                                        disabled={deleting}
+                                        className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl transition-colors mt-2"
+                                    >
+                                        {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                        Delete Event
+                                    </button>
+                                )}
                             </div>
                         </form>
                     </div>
