@@ -89,7 +89,7 @@ export default function CalendarPage() {
             }
 
             resetForm();
-            loadEvents();
+            await loadEvents();
         } catch (err) {
             console.error("Failed to save event:", err);
             alert("Failed to save calendar event");
@@ -106,7 +106,7 @@ export default function CalendarPage() {
         try {
             await calendarApi.delete(selectedEvent.id);
             resetForm();
-            loadEvents();
+            await loadEvents();
         } catch (err) {
             console.error("Failed to delete event:", err);
             alert("Failed to delete calendar event");
