@@ -11,6 +11,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Trash2,
+    Check,
 } from "lucide-react";
 
 export default function CalendarPage() {
@@ -240,8 +241,14 @@ export default function CalendarPage() {
                         ) : (
                             <div className="space-y-2">
                                 {todaysEvents.map(e => (
-                                    <div key={e.id} className="bg-gray-50 border border-gray-100 rounded-lg p-3">
-                                        <p className="text-sm font-medium text-gray-800">{e.title}</p>
+                                    <div 
+                                        key={e.id} 
+                                        onClick={() => openEditForm(e)}
+                                        className="bg-gray-50 border border-gray-100 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors group"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-sm font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{e.title}</p>
+                                        </div>
                                         <p className="text-xs text-gray-500 mt-1">
                                             {new Date(e.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
@@ -364,7 +371,8 @@ export default function CalendarPage() {
                                     <div
                                         key={idx}
                                         onClick={(e) => {
-                                            if ((e.target as HTMLElement).closest('.event-pill')) return;
+                                            // Only trigger if clicking the cell background, not an event or other relative
+                                            if (e.target !== e.currentTarget) return;
                                             setFormData(prev => ({ ...prev, event_date: dateStrKey }));
                                             setSelectedEvent(null);
                                             setShowForm(true);
@@ -577,8 +585,8 @@ export default function CalendarPage() {
                                         disabled={creating}
                                         className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-900 hover:bg-black disabled:bg-gray-400 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
                                     >
-                                        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedEvent ? <Plus className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
-                                        {selectedEvent ? 'Update Event' : 'Add Event'}
+                                        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedEvent ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
+                                        {selectedEvent ? 'Save Changes' : 'Create Event'}
                                     </button>
                                 </div>
 
