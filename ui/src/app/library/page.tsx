@@ -404,6 +404,30 @@ export default function LegalLibraryPage() {
                         )}
                     </div>
                 </div>
+                
+                {/* Example Searches */}
+                <div className="flex flex-wrap items-center gap-2 mt-4 ml-2">
+                    <span className="text-[12px] text-zinc-400 font-medium mr-1">Quick Search:</span>
+                    {[
+                        "IPC", 
+                        "CrPC", 
+                        "Family Law", 
+                        "Property Act", 
+                        "Supreme Court", 
+                        "Habeas Corpus"
+                    ].map((example) => (
+                        <button
+                            key={example}
+                            onClick={() => {
+                                setSearchQuery(example);
+                                executeSearch(example);
+                            }}
+                            className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-full text-[11px] font-semibold text-zinc-600 hover:bg-zinc-100 hover:border-zinc-300 transition-all shadow-sm"
+                        >
+                            {example}
+                        </button>
+                    ))}
+                </div>
 
                 {/* Results Area */}
                 <div className="w-full mt-8 pb-20">
