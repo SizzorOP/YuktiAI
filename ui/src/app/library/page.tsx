@@ -87,7 +87,18 @@ export default function LegalLibraryPage() {
             });
 
             if (!res.ok) {
-                throw new Error(`Failed to fetch results (${res.status})`);
+                let errorDetail = `Search failed (${res.status})`;
+                try {
+                    const errBody = await res.json();
+                    if (errBody.detail) {
+                        if (errBody.detail.includes("INDIAN_KANOON_TOKEN")) {
+                            errorDetail = "The Indian Kanoon API token is not configured on the server. Please ask the administrator to add the INDIAN_KANOON_TOKEN environment variable on the backend hosting platform (Render).";
+                        } else {
+                            errorDetail = errBody.detail;
+                        }
+                    }
+                } catch { /* couldn't parse body */ }
+                throw new Error(errorDetail);
             }
 
             const data = await res.json();
@@ -95,7 +106,7 @@ export default function LegalLibraryPage() {
                 setSearchResults(data.results);
             } else {
                 setSearchResults([]);
-                setError("No results found.");
+                setError("No results found for your query. Try different keywords.");
             }
         } catch (err: any) {
             console.error("Search error:", err);

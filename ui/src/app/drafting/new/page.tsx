@@ -337,8 +337,8 @@ function DraftingContent() {
                                 >
                                     <div
                                         className={`max-w-[85%] rounded-2xl p-6 ${message.role === "user"
-                                                ? "bg-zinc-900 text-white shadow-md"
-                                                : "bg-[#FAFAFA] border border-zinc-200 text-zinc-900 shadow-sm"
+                                                ? "bg-blue-600 text-white shadow-md rounded-br-sm"
+                                                : "bg-[#FAFAFA] border border-zinc-200 text-zinc-900 shadow-sm rounded-bl-sm"
                                             }`}
                                     >
                                         {message.role === "assistant" && (
@@ -347,9 +347,13 @@ function DraftingContent() {
                                                 <CopyButton text={message.content} />
                                             </div>
                                         )}
-                                        <div className={`prose prose-sm max-w-none ${message.role === "user" ? "dark:prose-invert" : "prose-headings:text-zinc-900 prose-p:text-zinc-800 prose-strong:text-zinc-900"} prose-headings:font-serif prose-headings:font-bold prose-p:leading-relaxed`}>
-                                            <ReactMarkdown>{message.content || "Empty response."}</ReactMarkdown>
-                                        </div>
+                                        {message.role === "user" ? (
+                                            <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                                        ) : (
+                                            <div className="prose prose-sm max-w-none prose-headings:text-zinc-900 prose-p:text-zinc-800 prose-strong:text-zinc-900 prose-headings:font-serif prose-headings:font-bold prose-p:leading-relaxed">
+                                                <ReactMarkdown>{message.content || "Empty response."}</ReactMarkdown>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
