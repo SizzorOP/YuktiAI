@@ -164,7 +164,7 @@ function DraftingContent() {
 
         try {
             const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://yuktiai.onrender.com";
-            const response = await fetch(`${apiBase}/query`, {
+            const response = await fetch(`${apiBase}/api/query`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
