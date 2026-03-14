@@ -429,9 +429,10 @@ export default function LegalLibraryPage() {
                                     className="block p-6 bg-white border border-zinc-200 rounded-2xl hover:border-zinc-300 hover:shadow-sm transition-all group"
                                 >
                                     <div className="flex justify-between items-start gap-4 mb-3">
-                                        <h3 className="text-base font-semibold text-zinc-900 leading-snug group-hover:text-blue-600 transition-colors">
-                                            {result.title || "Untitled Document"}
-                                        </h3>
+                                        <h3 
+                                            className="text-base font-semibold text-zinc-900 leading-snug group-hover:text-blue-600 transition-colors"
+                                            dangerouslySetInnerHTML={{ __html: result.title || "Untitled Document" }}
+                                        />
                                         <ExternalLink className="w-4 h-4 text-zinc-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
                                     <p className="text-sm text-zinc-600 leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: result.snippet || "No description available." }}></p>
