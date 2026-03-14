@@ -9,13 +9,14 @@ load_dotenv()
 class RoutingError(Exception):
     pass
 
-def map_intent_to_tool(user_query: str) -> Dict[str, Any]:
+def map_intent_to_tool(user_query: str, history: list[dict] = None) -> Dict[str, Any]:
     """
     Layer 2 Navigation Router: Maps a raw user query from WhatsApp or Web to the correct tool.
     Uses OpenAI to classify intent and extract required arguments reliably.
     
     Args:
         user_query (str): The raw text from the user.
+        history (list[dict], optional): The previous messages in the session for routing context.
         
     Returns:
         Dict: Contains 'target_tool' and 'extracted_kwargs'.
@@ -122,14 +123,28 @@ def map_intent_to_tool(user_query: str) -> Dict[str, Any]:
     legal_search is ONLY for finding specific cases in the Kanoon database.
     """
 
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Send up to the last 2 interactions to give the router context without overloading it
+    if history:
+        context_str = "Recent Context:\n"
+        for msg in history[-4:]:
+            role = msg.get("role")
+            content = msg.get("content")
+            if role in ["user", "assistant"] and content:
+                 # Truncate very long LLM responses to save tokens, we just need the gist
+                 short_content = content[:300] + "..." if len(content) > 300 else content
+                 context_str += f"{role.upper()}: {short_content}\n"
+        
+        messages.append({"role": "user", "content": context_str})
+
+    messages.append({"role": "user", "content": f"New query to route: '{user_query}'"})
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             temperature=0.0,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"User query: '{user_query}'"}
-            ],
+            messages=messages,
             response_format=response_format
         )
         

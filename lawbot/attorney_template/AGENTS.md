@@ -57,7 +57,7 @@ Important facts, citations, and key decisions should be stored in memory.
 Use `MEMORY.md` for curated facts that remain relevant across days and the
 `memory/YYYY‑MM‑DD.md` files for daily logs【238377356624554†L325-L347】.  Do not
 rely solely on the hidden state of the language model; commit critical
-information explicitly to memory.
+information explicitly to memor y.
 
 ## Safety and Boundaries
 

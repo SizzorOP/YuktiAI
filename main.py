@@ -87,6 +87,7 @@ def on_startup():
 
 class QueryRequest(BaseModel):
     query: str
+    history: list[dict] = []  # Optional chat history context
     document_type: str = None  # Optional context for adversarial engine
     jurisdiction: str = None   # Optional context for adversarial engine
 
@@ -106,12 +107,12 @@ def process_query(request: QueryRequest):
 
     try:
         # Step 1: Map Intent
-        route_info = map_intent_to_tool(raw_query)
+        route_info = map_intent_to_tool(raw_query, request.history)
         target_tool = route_info.get("target_tool")
         kwargs = route_info.get("extracted_kwargs", {})
         reasoning = route_info.get("reasoning", "")
         
-        print(f"DEBUG: Route={target_tool} | Reasoning={reasoning}")
+        print(f"DEBUG: Route={target_tool} | Reasoning={reasoning}");
 
         # Step 2: Execute Corresponding Tool
         if target_tool == "legal_search":
@@ -121,7 +122,7 @@ def process_query(request: QueryRequest):
             return {"route": "legal_search", "search_term_used": search_term, "result": result}
             
         elif target_tool == "general_chat":
-            result = general_chat(raw_query)
+            result = general_chat(raw_query, request.history)
             return {"route": "general_chat", "result": result}
             
         elif target_tool == "web_search":
@@ -152,7 +153,7 @@ def process_query(request: QueryRequest):
             
         elif target_tool == "drafting_agent":
             draft_prompt = kwargs.get("query", raw_query)
-            result = generate_draft(draft_prompt)
+            result = generate_draft(draft_prompt, request.history)
             return {"route": "drafting_agent", "result": result}
             
         elif target_tool == "unknown":

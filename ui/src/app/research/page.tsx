@@ -178,10 +178,18 @@ function ResearchContent() {
       try {
         const API_URL =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+          
+        // prepare history containing only user and assistant messages for context
+        const sessionHistory = activeSession ? activeSession.messages.filter(m => m.role === 'user' || m.role === 'assistant') : [];
+        const payload = {
+            query,
+            history: sessionHistory.map(m => ({ role: m.role, content: m.content }))
+        };
+
         const res = await fetch(`${API_URL}/api/query`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify(payload),
           signal: abortControllerRef.current.signal,
         });
 

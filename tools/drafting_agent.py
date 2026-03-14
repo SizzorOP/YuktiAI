@@ -5,11 +5,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def generate_draft(prompt: str) -> dict:
+def generate_draft(prompt: str, history: list[dict] = None) -> dict:
     """
     Analyzes a user prompt to determine if they are requesting a specific legal draft.
     If the draft type is unclear, prompts the user to specify one.
     If clear, generates a structured legal draft or template.
+    Optionally considers conversation history for iterative refinement.
     """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -69,14 +70,22 @@ def generate_draft(prompt: str) -> dict:
        - Set 'response_message' briefly introducing the draft and offering to fill in the placeholders if they provide details.
     """
 
+    messages = [{"role": "system", "content": system_prompt}]
+
+    if history:
+        for msg in history:
+            role = msg.get("role")
+            content = msg.get("content")
+            if role in ["user", "assistant"] and content:
+                 messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": prompt})
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             temperature=0.2, # Low temperature for reliable legal formats
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
+            messages=messages,
             response_format=response_format
         )
         

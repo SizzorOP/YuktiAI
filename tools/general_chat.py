@@ -9,7 +9,7 @@ class ChatError(Exception):
     """Raised when the General Chat LLM fails."""
     pass
 
-def general_chat(query: str) -> dict:
+def general_chat(query: str, history: list[dict] = None) -> dict:
     """
     Conversational legal Q&A powered by GPT-4o.
     Handles explanations, interpretations, tactical advice, hallucination traps,
@@ -17,6 +17,7 @@ def general_chat(query: str) -> dict:
     
     Args:
         query (str): The user's natural language legal question.
+        history (list[dict], optional): Previous chat messages for context.
         
     Returns:
         dict: A structured response with 'answer', 'citations', 'confidence', and 'abstentions'.
@@ -103,14 +104,22 @@ def general_chat(query: str) -> dict:
        bullet points for lists, and headers (##) for sections when the answer is long.
     """
 
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    if history:
+        for msg in history:
+            role = msg.get("role")
+            content = msg.get("content")
+            if role in ["user", "assistant"] and content:
+                 messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": query})
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             temperature=0.1,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query}
-            ],
+            messages=messages,
             response_format=response_format
         )
         
