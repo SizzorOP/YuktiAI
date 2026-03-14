@@ -197,10 +197,24 @@ function ResearchContent() {
 
         const data = await res.json();
 
+        // Dynamically extract the actual readable text response based on the route
+        let actualResponseText = "Here are your results:";
+        if (data.route === "general_chat" && data.result?.answer) {
+            actualResponseText = data.result.answer;
+        } else if (data.route === "document_processor" && data.result?.summary) {
+            actualResponseText = data.result.summary;
+        } else if (data.route === "legal_search" && data.result?.results) {
+             // For legal search, create a string representation of the results so LLM can read it
+             const titles = data.result.results.slice(0, 3).map((r: any) => r.title).join(", ");
+             actualResponseText = `I found these related judgments: ${titles}`;
+        } else if (data.route === "procedural_navigator" && data.result?.steps) {
+             actualResponseText = `Timeline steps generated: ${data.result.steps.length} steps.`;
+        }
+
         const aiMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: data.message || "Here are your results:",
+          content: data.message || actualResponseText,
           metadata: {
             type: data.route,
             results: data.result?.results || data.result,

@@ -60,7 +60,13 @@ export default function NewDraftPage() {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
             
             // Build history payload from earlier messages
-            const sessionHistory = messages.map(m => ({ role: m.role, content: m.content }));
+            const sessionHistory = messages.map(m => {
+                let text = m.content;
+                if (m.metadata?.results?.generated_template) {
+                    text += `\n\n[PREVIOUS DRAFT GENERATED]:\n${m.metadata.results.generated_template}`;
+                }
+                return { role: m.role, content: text };
+            });
             
             const payload = {
                 query,
