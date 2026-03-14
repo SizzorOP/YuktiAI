@@ -8,6 +8,8 @@ import {
     ArrowLeft,
     Share2,
     Download,
+    Copy,
+    Check
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -25,6 +27,28 @@ interface ChatMessage {
 
 const STORAGE_KEY = "lawbot_drafting_sessions";
 const ACTIVE_SESSION_KEY = "lawbot_active_draft_session";
+
+function CopyButton({ text }: { text: string }) {
+    const [copied, setCopied] = useState(false);
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy text', err);
+        }
+    };
+    return (
+        <button 
+            onClick={handleCopy}
+            className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 rounded-md transition-all active:scale-95"
+            title="Copy draft"
+        >
+            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+        </button>
+    );
+}
 
 function DraftingContent() {
     const searchParams = useSearchParams();
@@ -312,13 +336,19 @@ function DraftingContent() {
                                     className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                                 >
                                     <div
-                                        className={`max-w-[85%] rounded-2xl p-5 ${message.role === "user"
+                                        className={`max-w-[85%] rounded-2xl p-6 ${message.role === "user"
                                                 ? "bg-zinc-900 text-white shadow-md"
-                                                : "bg-white border border-zinc-100 text-zinc-800 shadow-sm"
+                                                : "bg-[#FAFAFA] border border-zinc-200 text-zinc-900 shadow-sm"
                                             }`}
                                     >
-                                        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-serif prose-headings:font-bold prose-p:leading-relaxed">
-                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                        {message.role === "assistant" && (
+                                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-100">
+                                                <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">YuktiAI Drafting Agent</div>
+                                                <CopyButton text={message.content} />
+                                            </div>
+                                        )}
+                                        <div className={`prose prose-sm max-w-none ${message.role === "user" ? "dark:prose-invert" : "prose-headings:text-zinc-900 prose-p:text-zinc-800 prose-strong:text-zinc-900"} prose-headings:font-serif prose-headings:font-bold prose-p:leading-relaxed`}>
+                                            <ReactMarkdown>{message.content || "Empty response."}</ReactMarkdown>
                                         </div>
                                     </div>
                                 </div>

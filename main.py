@@ -95,6 +95,24 @@ class QueryRequest(BaseModel):
 def read_root():
     return {"status": "online", "message": "YuktiAI API is running."}
 
+class LibrarySearchRequest(BaseModel):
+    query: str
+    pagenum: int = 0
+
+@app.post("/api/library/search")
+def library_search(request: LibrarySearchRequest):
+    """
+    Direct endpoint for Legal Library to search Indian Kanoon.
+    Bypasses the NLP router for faster, deterministic searches.
+    """
+    if not request.query:
+        raise HTTPException(status_code=400, detail="Query cannot be empty.")
+    try:
+        result = legal_search(request.query, request.pagenum)
+        return {"status": "success", "results": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/query")
 def process_query(request: QueryRequest):
     """

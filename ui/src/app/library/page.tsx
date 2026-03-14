@@ -7,13 +7,28 @@ import {
     Filter,
     ChevronDown,
     X,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    Loader2,
+    ExternalLink,
+    AlertCircle
 } from "lucide-react";
+
+interface SearchResult {
+    title: string;
+    doc_id: string;
+    snippet: string;
+    docsource: string;
+    url: string;
+}
 
 export default function LegalLibraryPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
+
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Filter State
     const [activeTab, setActiveTab] = useState<"legislative" | "court">("legislative");
@@ -43,14 +58,55 @@ export default function LegalLibraryPage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleApplyFilters = () => {
-        console.log("Applying Search:", searchQuery);
-        if (activeTab === "legislative") {
-            console.log("Legislative Filters:", { actType, status, year, language });
-        } else {
-            console.log("Court Filters:", { court, outcome, judges, dateFrom, dateTo });
-        }
+    const executeSearch = async (queryToSearch?: string) => {
+        const query = queryToSearch || searchQuery;
+        if (!query.trim()) return;
+
         setIsFilterOpen(false);
+        setIsLoading(true);
+        setError(null);
+
+        // Build a more complex query if filters are applied
+        let finalQuery = query;
+        if (activeTab === "legislative") {
+            if (actType) finalQuery += ` ${actType}`;
+            if (year) finalQuery += ` ${year}`;
+            if (status) finalQuery += ` ${status}`;
+        } else {
+            if (court) finalQuery += ` ${court.replace("_", " ")}`;
+            if (outcome) finalQuery += ` ${outcome}`;
+            if (judges.length > 0) finalQuery += ` ${judges.join(" ")}`;
+        }
+
+        try {
+            const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://yuktiai.onrender.com";
+            const res = await fetch(`${apiBase}/api/library/search`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: finalQuery.trim(), pagenum: 0 })
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to fetch results (${res.status})`);
+            }
+
+            const data = await res.json();
+            if (data.status === "success" && data.results) {
+                setSearchResults(data.results);
+            } else {
+                setSearchResults([]);
+                setError("No results found.");
+            }
+        } catch (err: any) {
+            console.error("Search error:", err);
+            setError(err.message || "An error occurred while searching.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleApplyFilters = () => {
+        executeSearch();
     };
 
     const handleAddJudge = () => {
@@ -81,9 +137,19 @@ export default function LegalLibraryPage() {
                             placeholder="Search for Acts, Judgements.."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    executeSearch();
+                                }
+                            }}
                             className="w-full pl-6 pr-12 py-3.5 bg-white border border-zinc-200 rounded-full text-[15px] outline-none focus:border-zinc-400 transition-colors shadow-sm text-zinc-800 placeholder:text-zinc-400"
                         />
-                        <Search className="w-4 h-4 text-zinc-400 absolute right-6 top-1/2 -translate-y-1/2" />
+                        <button 
+                            onClick={() => executeSearch()}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-100 rounded-full transition-colors"
+                        >
+                            <Search className="w-5 h-5 text-zinc-500" />
+                        </button>
                     </div>
 
                     <div className="relative" ref={filterRef}>
@@ -326,6 +392,55 @@ export default function LegalLibraryPage() {
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Results Area */}
+                <div className="w-full mt-8 pb-20">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
+                            <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                            <p className="text-sm font-medium">Searching legal library...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+                            <AlertCircle className="w-8 h-8 mb-4 text-red-400" />
+                            <p className="text-sm text-red-500">{error}</p>
+                        </div>
+                    ) : searchResults.length > 0 ? (
+                        <div className="space-y-4">
+                            <h2 className="text-sm font-semibold text-zinc-900 mb-6">Search Results ({searchResults.length})</h2>
+                            {searchResults.map((result, idx) => (
+                                <a 
+                                    key={idx} 
+                                    href={result.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="block p-6 bg-white border border-zinc-200 rounded-2xl hover:border-zinc-300 hover:shadow-sm transition-all group"
+                                >
+                                    <div className="flex justify-between items-start gap-4 mb-3">
+                                        <h3 className="text-base font-semibold text-zinc-900 leading-snug group-hover:text-blue-600 transition-colors">
+                                            {result.title || "Untitled Document"}
+                                        </h3>
+                                        <ExternalLink className="w-4 h-4 text-zinc-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                    <p className="text-sm text-zinc-600 leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: result.snippet || "No description available." }}></p>
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2.5 py-1 bg-zinc-100 text-zinc-600 text-[11px] font-medium tracking-wide uppercase rounded-md">
+                                            {result.docsource || "Legal Document"}
+                                        </span>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mb-4 border border-zinc-100">
+                                <Search className="w-6 h-6 text-zinc-300" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-zinc-900 mb-1">No results</h3>
+                            <p className="text-sm text-zinc-500 max-w-sm">Enter a search term or apply filters to find legislative acts and court judgements.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
