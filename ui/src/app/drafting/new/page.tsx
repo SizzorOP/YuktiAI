@@ -175,12 +175,23 @@ function DraftingContent() {
             });
 
             const data = await response.json();
+            
+            // The backend returns: { route: "drafting_agent", result: { response_message, generated_template, ... } }
+            const draftResult = data.result || data;
+            const responseMessage = draftResult.response_message || data.response_text || "";
+            const generatedTemplate = draftResult.generated_template || "";
+            
+            // Combine the response message and template for display
+            const fullContent = generatedTemplate 
+                ? `${responseMessage}\n\n${generatedTemplate}`
+                : responseMessage || "No response received.";
+            
             const assistantMessage: ChatMessage = {
                 role: "assistant",
-                content: data.response_text,
+                content: fullContent,
                 metadata: {
-                    generated_template: data.generated_template,
-                    detected_draft_type: data.detected_draft_type,
+                    generated_template: generatedTemplate,
+                    detected_draft_type: draftResult.detected_draft_type,
                 },
             };
 
